@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Hashtag Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+            border-left: 4px solid #388e3c;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #d32f2f;
+            border-left: 4px solid #d32f2f;
+        }
+
+        .progress {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        .progress-text {
+            margin-top: 8px;
+            color: #666;
+            font-size: 0.9em;
+            text-align: center;
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .results-count {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .download-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #45a049;
+        }
+
+        .help-text {
+            font-size: 0.85em;
+            color: #999;
+            margin-top: 6px;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            color: #856404;
+            font-size: 0.9em;
+        }
+
+        .api-setup {
+            background: #f5f5f5;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .api-setup a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .api-setup a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 Instagram Hashtag Search</h1>
+        <p class="subtitle">Search top media by hashtag using Instagram Graph API</p>
+
+        <div class="api-setup">
+            <strong>Setup Required:</strong> You need a Facebook/Instagram business account and Graph API access token. 
+            <a href="https://developers.facebook.com/docs/instagram-api/getting-started" target="_blank">Learn how to get an access token</a>
+        </div>
+
+        <div class="warning">
+            <strong>Note:</strong> Instagram Graph API has rate limits and requires proper permissions. The hashtag search endpoint may return fewer results based on API limitations and your access level.
+        </div>
+
+        <form id="searchForm">
+            <div class="input-group">
+                <label for="accessToken">Instagram Graph API Access Token *</label>
+                <input 
+                    type="password" 
+                    id="accessToken" 
+                    placeholder="Enter your access token"
+                    required
+                >
+                <div class="help-text">Your token is stored locally and never sent to any third-party server</div>
+            </div>
+
+            <div class="input-group">
+                <label for="hashtag">Hashtag *</label>
+                <input 
+                    type="text" 
+                    id="hashtag" 
+                    placeholder="travel (without #)"
+                    required
+                >
+                <div class="help-text">Enter the hashtag without the # symbol</div>
+            </div>
+
+            <button type="submit" class="btn" id="searchBtn">
+                🔍 Search Top Media
+            </button>
+        </form>
+
+        <div class="progress" id="progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Initializing...</div>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="results" id="results">
+            <div class="results-header">
+                <span class="results-count" id="resultsCount">0 posts found</span>
+                <button class="download-btn" id="downloadBtn">
+                    ⬇️ Download Excel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        let collectedPosts = [];
+
+        const form = document.getElementById('searchForm');
+        const searchBtn = document.getElementById('searchBtn');
+        const status = document.getElementById('status');
+        const progress = document.getElementById('progress');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const results = document.getElementById('results');
+        const resultsCount = document.getElementById('resultsCount');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function hideStatus() {
+            status.style.display = 'none';
+        }
+
+        function showProgress(current, total, text) {
+            progress.style.display = 'block';
+            const percentage = (current / total) * 100;
+            progressFill.style.width = `${percentage}%`;
+            progressText.textContent = text;
+        }
+
+        function hideProgress() {
+            progress.style.display = 'none';
+        }
+
+        async function searchHashtagId(accessToken, hashtag) {
+            const userId = '17841465084031604'; // Instagram Business Account ID
+            const url = `https://graph.facebook.com/v18.0/ig_hashtag_search?user_id=${userId}&q=${encodeURIComponent(hashtag)}&access_token=${accessToken}`;
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error.message);
+            }
+            
+            if (!data.data || data.data.length === 0) {
+                throw new Error('Hashtag not found');
+            }
+            
+            return data.data[0].id;
+        }
+
+        async function getTopMedia(accessToken, hashtagId, limit = 25) {
+            const url = `https://graph.facebook.com/v18.0/${hashtagId}/top_media?user_id=17841465084031604&fields=id,permalink&limit=${limit}&access_token=${accessToken}`;
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            
+            try {
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+                
+                return data;
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timed out after 30 seconds');
+                }
+                throw error;
+            }
+        }
+
+        async function fetchAllPages(accessToken, hashtagId, maxPages = 100) {
+            const allPosts = [];
+            const seenUrls = new Set(); // Prevent duplicates
+            let nextUrl = null;
+            let pageCount = 0;
+            let consecutiveErrors = 0;
+            const maxConsecutiveErrors = 3;
+
+            // First request with retry logic
+            showProgress(pageCount, maxPages, `Fetching page ${pageCount + 1} of ${maxPages}...`);
+            let data = await getTopMediaWithRetry(accessToken, hashtagId, 25);
+            
+            if (data.data) {
+                data.data.forEach(post => {
+                    if (post.permalink && !seenUrls.has(post.permalink)) {
+                        allPosts.push(post);
+                        seenUrls.add(post.permalink);
+                    }
+                });
+            }
+            
+            pageCount++;
+            nextUrl = data.paging?.next;
+
+            // Fetch subsequent pages
+            while (nextUrl && pageCount < maxPages && consecutiveErrors < maxConsecutiveErrors) {
+                showProgress(pageCount, maxPages, `Fetching page ${pageCount + 1} of ${maxPages}... (${allPosts.length} posts collected)`);
+                
+                try {
+                    // Use exponential backoff: increases delay as we fetch more pages
+                    const delay = Math.min(300 + (pageCount * 10), 1000);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    
+                    const response = await fetch(nextUrl);
+                    
+                    // Check for rate limiting
+                    if (response.status === 429) {
+                        console.log('Rate limit hit, waiting 60 seconds...');
+                        showProgress(pageCount, maxPages, `Rate limit reached. Waiting 60 seconds... (${allPosts.length} posts collected)`);
+                        await new Promise(resolve => setTimeout(resolve, 60000));
+                        continue; // Retry same request
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    data = await response.json();
+                    
+                    if (data.error) {
+                        console.error('API Error:', data.error);
+                        consecutiveErrors++;
+                        
+                        // If it's a temporary error, wait and retry
+                        if (data.error.code === 1 || data.error.code === 2) {
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                            continue;
+                        }
+                        break;
+                    }
+                    
+                    // Reset error counter on success
+                    consecutiveErrors = 0;
+                    
+                    if (data.data && data.data.length > 0) {
+                        // Add only unique posts
+                        let newPostsAdded = 0;
+                        data.data.forEach(post => {
+                            if (post.permalink && !seenUrls.has(post.permalink)) {
+                                allPosts.push(post);
+                                seenUrls.add(post.permalink);
+                                newPostsAdded++;
+                            }
+                        });
+                        
+                        // If no new unique posts were added, we might be getting repeats
+                        if (newPostsAdded === 0) {
+                            console.log('No new unique posts found, stopping pagination');
+                            break;
+                        }
+                    } else {
+                        // No more data available
+                        break;
+                    }
+                    
+                    nextUrl = data.paging?.next;
+                    pageCount++;
+                    
+                } catch (error) {
+                    console.error('Error fetching page:', error);
+                    consecutiveErrors++;
+                    
+                    // Wait longer on error before retrying
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                }
+            }
+
+            return allPosts;
+        }
+
+        async function getTopMediaWithRetry(accessToken, hashtagId, limit = 25, maxRetries = 3) {
+            let lastError;
+            
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    if (attempt > 0) {
+                        // Wait before retry with exponential backoff
+                        const waitTime = Math.min(1000 * Math.pow(2, attempt), 10000);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                    }
+                    
+                    return await getTopMedia(accessToken, hashtagId, limit);
+                } catch (error) {
+                    lastError = error;
+                    console.log(`Attempt ${attempt + 1} failed:`, error.message);
+                }
+            }
+            
+            throw lastError;
+        }
+
+        function createExcelFile(posts, hashtag) {
+            const worksheetData = [
+                ['Post URL']
+            ];
+
+            posts.forEach(post => {
+                worksheetData.push([
+                    post.permalink || ''
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+            
+            // Set column width
+            ws['!cols'] = [
+                { wch: 60 } // URL
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Instagram Posts');
+
+            const fileName = `instagram_${hashtag}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const accessToken = document.getElementById('accessToken').value.trim();
+            const hashtag = document.getElementById('hashtag').value.trim().replace('#', '');
+            
+            if (!accessToken || !hashtag) {
+                showStatus('Please fill in all required fields', 'error');
+                return;
+            }
+
+            searchBtn.disabled = true;
+            hideStatus();
+            results.style.display = 'none';
+            collectedPosts = [];
+
+            try {
+                showStatus('Searching for hashtag...', 'info');
+                
+                // Step 1: Get hashtag ID
+                const hashtagId = await searchHashtagId(accessToken, hashtag);
+                showStatus(`Found hashtag! Fetching top media...`, 'info');
+                
+                // Step 2: Fetch all pages
+                collectedPosts = await fetchAllPages(accessToken, hashtagId, 100);
+                
+                hideProgress();
+                
+                if (collectedPosts.length === 0) {
+                    showStatus('No posts found for this hashtag', 'error');
+                } else {
+                    const message = collectedPosts.length >= 2400 
+                        ? `Successfully collected ${collectedPosts.length} posts! (Near maximum capacity)` 
+                        : `Successfully collected ${collectedPosts.length} unique posts!`;
+                    showStatus(message, 'success');
+                    resultsCount.textContent = `${collectedPosts.length} posts found`;
+                    results.style.display = 'block';
+                }
+                
+            } catch (error) {
+                hideProgress();
+                showStatus(`Error: ${error.message}`, 'error');
+                console.error('Error:', error);
+            } finally {
+                searchBtn.disabled = false;
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (collectedPosts.length > 0) {
+                const hashtag = document.getElementById('hashtag').value.trim().replace('#', '');
+                createExcelFile(collectedPosts, hashtag);
+                showStatus('Excel file downloaded successfully!', 'success');
+            }
+        });
+
+        // Save access token to localStorage
+        document.getElementById('accessToken').addEventListener('change', (e) => {
+            localStorage.setItem('instagram_access_token', e.target.value);
+        });
+
+        // Load saved access token
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('instagram_access_token');
+            if (savedToken) {
+                document.getElementById('accessToken').value = savedToken;
+            }
+        });
+    </script>
+</body>
+</html>
